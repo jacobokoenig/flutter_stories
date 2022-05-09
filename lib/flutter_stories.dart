@@ -1,5 +1,7 @@
 library flutter_stories;
 
+import 'dart:ffi';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_stories/story_controller.dart';
@@ -14,8 +16,7 @@ typedef Duration MomentDurationGetter(int? index);
 /// Builder function that accepts current build context, moment index,
 /// moment progress and gap between each segment and returns widget for segment
 ///
-typedef Widget ProgressSegmentBuilder(
-    BuildContext context, int index, double progress, double gap);
+typedef Widget ProgressSegmentBuilder(BuildContext context, int index, double progress, double gap);
 
 ///
 /// Widget that allows you to use stories mechanism in your apps
@@ -47,6 +48,8 @@ class Story extends StatefulWidget {
     Key? key,
     required this.momentBuilder,
     required this.controller,
+    this.onPauseHold,
+    this.onPauseEnded,
     this.progressSegmentBuilder = Story.instagramProgressSegmentBuilder,
     this.progressSegmentGap = 2.0,
     this.progressOpacityDuration = const Duration(milliseconds: 300),
@@ -60,6 +63,9 @@ class Story extends StatefulWidget {
         super(key: key);
 
   final StoryController controller;
+
+  final VoidCallback? onPauseHold;
+  final VoidCallback? onPauseEnded;
 
   ///
   /// Builder that gets executed executed for each moment
@@ -124,12 +130,10 @@ class _StoryState extends State<Story> with SingleTickerProviderStateMixin {
   bool _isInFullscreenMode = false;
 
   void _onTapDown(TapDownDetails details) {
-    print('Tap down');
     widget.controller.pause();
   }
 
   void _onTapUp(TapUpDetails details) {
-    print('Tap up');
     widget.controller.pause();
     final width = MediaQuery.of(context).size.width;
     if (details.localPosition.dx < width * widget.momentSwitcherFraction) {
@@ -140,22 +144,21 @@ class _StoryState extends State<Story> with SingleTickerProviderStateMixin {
   }
 
   void _onLongPress() {
-    print('Long press');
     widget.controller.pause();
     setState(() => _isInFullscreenMode = true);
+    if (widget.onPauseHold != null) widget.onPauseHold!();
   }
 
   void _onLongPressEnd() {
-    print('Long press end');
     setState(() => _isInFullscreenMode = false);
     widget.controller.play();
+    if (widget.onPauseEnded != null) widget.onPauseEnded!();
   }
 
   Future<void> _hideStatusBar() =>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   Future<void> _showStatusBar() =>
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-          overlays: SystemUiOverlay.values);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
 
   @override
   void initState() {
