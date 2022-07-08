@@ -1,7 +1,5 @@
 library flutter_stories;
 
-import 'dart:ffi';
-
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_stories/story_controller.dart';
@@ -10,13 +8,14 @@ import 'package:flutter_stories/story_controller.dart';
 /// Callback function that accepts the index of moment and
 /// returns its' Duration
 ///
-typedef Duration MomentDurationGetter(int? index);
+typedef MomentDurationGetter = Duration Function(int? index);
 
 ///
 /// Builder function that accepts current build context, moment index,
 /// moment progress and gap between each segment and returns widget for segment
 ///
-typedef Widget ProgressSegmentBuilder(BuildContext context, int index, double progress, double gap);
+typedef ProgressSegmentBuilder = Widget Function(
+    BuildContext context, int index, double progress, double gap);
 
 ///
 /// Widget that allows you to use stories mechanism in your apps
@@ -110,13 +109,13 @@ class Story extends StatefulWidget {
         height: 2.0,
         margin: EdgeInsets.symmetric(horizontal: gap / 2),
         decoration: BoxDecoration(
-          color: Color(0x80ffffff),
+          color: const Color(0x80ffffff),
           borderRadius: BorderRadius.circular(1.0),
         ),
         child: FractionallySizedBox(
           alignment: Alignment.centerLeft,
           widthFactor: progress,
-          child: Container(
+          child: const ColoredBox(
             color: Color(0xffffffff),
           ),
         ),
@@ -158,7 +157,8 @@ class _StoryState extends State<Story> with SingleTickerProviderStateMixin {
   Future<void> _hideStatusBar() =>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   Future<void> _showStatusBar() =>
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+          overlays: SystemUiOverlay.values);
 
   @override
   void initState() {
@@ -200,11 +200,17 @@ class _StoryState extends State<Story> with SingleTickerProviderStateMixin {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        widget.momentBuilder(
-          context,
-          widget.controller.currentIdx < widget.controller.momentCount
-              ? widget.controller.currentIdx
-              : widget.controller.momentCount - 1,
+        GestureDetector(
+          onTapDown: _onTapDown,
+          onTapUp: _onTapUp,
+          onLongPress: _onLongPress,
+          onLongPressUp: _onLongPressEnd,
+          child: widget.momentBuilder(
+            context,
+            widget.controller.currentIdx < widget.controller.momentCount
+                ? widget.controller.currentIdx
+                : widget.controller.momentCount - 1,
+          ),
         ),
         Positioned(
           top: widget.topOffset ?? MediaQuery.of(context).padding.top,
@@ -242,18 +248,6 @@ class _StoryState extends State<Story> with SingleTickerProviderStateMixin {
                 )
               ],
             ),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onTapDown: _onTapDown,
-            onTapUp: _onTapUp,
-            onLongPress: _onLongPress,
-            onLongPressUp: _onLongPressEnd,
           ),
         ),
       ],
